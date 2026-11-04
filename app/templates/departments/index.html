@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Department Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Department Management</h2>
+        <p class="page-subtitle">Configure institutional academic departments, codes, and operational descriptions</p>
+    </div>
+    {% if session.get('role_name') == 'ADMIN' %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+        <i class="bi bi-plus-circle-fill me-1"></i> Add Department
+    </button>
+    {% endif %}
+</div>
+
+<div class="acad-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Department Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in departments %}
+                <tr>
+                    <td><strong class="badge bg-primary fs-6">{{ d.department_code }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ d.department_name }}</td>
+                    <td class="text-muted">{{ d.description or 'No description provided.' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center py-4 text-muted">No departments configured.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addDeptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('departments.create') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create Academic Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Department Code (Unique, e.g. CSE)</label>
+                        <input type="text" name="department_code" class="form-control" placeholder="CSE" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Department Name</label>
+                        <input type="text" name="department_name" class="form-control" placeholder="Computer Science and Engineering" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Department curriculum and specializations..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

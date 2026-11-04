@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Institutional Settings & Risk Thresholds</h2>
+        <p class="page-subtitle">Configure early warning cut-off thresholds, institutional metadata, and system behaviors</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Risk Thresholds Table -->
+    <div class="col-lg-8">
+        <div class="acad-card h-100">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-sliders text-primary me-2"></i>Academic Risk Classification Cut-offs</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Scope / Department</th>
+                            <th>High Risk (Score &lt;)</th>
+                            <th>Medium Risk (&lt;)</th>
+                            <th>Low Risk (&ge;)</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in thresholds %}
+                        <tr>
+                            <td><strong class="text-dark">{{ t.department_name }}</strong></td>
+                            <td><span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-6">&lt; {{ t.high_risk_threshold }}%</span></td>
+                            <td><span class="badge bg-warning-subtle text-warning border border-warning-subtle fs-6">&lt; {{ t.medium_risk_threshold }}%</span></td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle fs-6">&ge; {{ t.low_risk_threshold }}%</span></td>
+                            <td class="small text-muted">{{ t.updated_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Threshold Adjustment Form -->
+    <div class="col-lg-4">
+        <div class="acad-card h-100">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pencil-square text-primary me-2"></i>Update Default Thresholds</h6>
+            <form method="POST" action="{{ url_for('settings.update_thresholds') }}">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-danger">High Risk Boundary (%)</label>
+                    <input type="number" step="0.5" name="high_risk_threshold" class="form-control" value="40.0" min="20" max="60" required>
+                    <div class="form-text">Students with predicted score below this are flagged High Risk.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-warning">Medium Risk Boundary (%)</label>
+                    <input type="number" step="0.5" name="medium_risk_threshold" class="form-control" value="60.0" min="40" max="80" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-success">Low Risk Satisfactory (%)</label>
+                    <input type="number" step="0.5" name="low_risk_threshold" class="form-control" value="80.0" min="60" max="100" required>
+                </div>
+                {% if session.get('role_name') == 'ADMIN' %}
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-save me-1"></i> Update Risk Parameters
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-secondary w-100" disabled>Admin Privilege Required</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

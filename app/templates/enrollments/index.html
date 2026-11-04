@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Enrollment Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Enrollment Management</h2>
+        <p class="page-subtitle">Track student-course-semester mappings with unique constraints preventing duplicate enrollments</p>
+    </div>
+    {% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEnrollModal">
+        <i class="bi bi-link-45deg me-1"></i> Enroll Student in Course
+    </button>
+    {% endif %}
+</div>
+
+<div class="acad-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Semester</th>
+                    <th>Enrollment Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in enrollments %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ e.registration_number }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ e.student_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ e.course_code }}</span></td>
+                    <td>{{ e.course_name }}</td>
+                    <td>{{ e.semester_name }}</td>
+                    <td class="text-muted small">{{ e.enrollment_date }}</td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Enrolled</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center py-4 text-muted">No course enrollments logged.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addEnrollModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('enrollments.create') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Enroll Student in Course</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Student</label>
+                        <select name="student_id" class="form-select" required>
+                            {% for s in students %}
+                            <option value="{{ s.student_id }}">{{ s.registration_number }} - {{ s.student_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Course</label>
+                        <select name="course_id" class="form-select" required>
+                            {% for c in courses %}
+                            <option value="{{ c.course_id }}">{{ c.course_code }} - {{ c.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Semester</label>
+                        <select name="semester_id" class="form-select" required>
+                            {% for sem in semesters %}
+                            <option value="{{ sem.semester_id }}">{{ sem.semester_name }} ({{ sem.academic_year }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Complete Enrollment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">User & Role Management</h2>
+        <p class="page-subtitle">Configure institutional access credentials, password hashing policies, and role-based access control</p>
+    </div>
+    {% if session.get('role_name') == 'ADMIN' %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        <i class="bi bi-person-plus-fill me-1"></i> Add System User
+    </button>
+    {% endif %}
+</div>
+
+<div class="acad-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Username</th>
+                    <th>Email Address</th>
+                    <th>Assigned Role</th>
+                    <th>Account Status</th>
+                    <th>Created Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><code>#{{ u.user_id }}</code></td>
+                    <td><strong class="text-dark">{{ u.username }}</strong></td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        {% if u.role_name == 'ADMIN' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">ADMIN</span>
+                        {% elif u.role_name == 'FACULTY' %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold">FACULTY</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">STUDENT</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">{{ u.account_status }}</span></td>
+                    <td class="small text-muted">{{ u.created_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('users.create') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create System User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Username</label>
+                        <input type="text" name="username" class="form-control" placeholder="johndoe" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="johndoe@acadrisk.edu" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Role</label>
+                        <select name="role_id" class="form-select" required>
+                            {% for r in roles %}
+                            <option value="{{ r.role_id }}">{{ r.role_name }} - {{ r.description }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Initial Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••••••" required>
+                        <small class="text-muted">Passwords are hashed using standard scrypt/pbkdf2 before database storage.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Institutional Academic Dashboard</h2>
+        <p class="page-subtitle">Real-time academic monitoring, genuine machine learning risk alerts, and DBMS intelligence</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('predictions.index') }}" class="btn btn-outline-primary">
+            <i class="bi bi-cpu me-1"></i> Run Prediction
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-primary">
+            <i class="bi bi-file-earmark-bar-graph me-1"></i> Generate Report
+        </a>
+    </div>
+</div>
+
+<!-- Primary Statistic Cards Row 1 -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="acad-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="stat-label">Enrolled Students</span>
+                <div class="stat-number mt-1">{{ summary.total_students }}</div>
+                <div class="text-muted small mt-1"><i class="bi bi-people text-primary me-1"></i> Across {{ summary.total_departments }} Departments</div>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-blue">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="acad-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="stat-label">Faculty Members</span>
+                <div class="stat-number mt-1">{{ summary.total_faculty }}</div>
+                <div class="text-muted small mt-1"><i class="bi bi-person-badge text-success me-1"></i> {{ summary.total_courses }} Active Courses</div>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-green">
+                <i class="bi bi-person-badge-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="acad-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="stat-label">Average Attendance</span>
+                <div class="stat-number mt-1">{{ summary.avg_attendance }}%</div>
+                <div class="text-muted small mt-1"><i class="bi bi-check2-circle text-primary me-1"></i> Calculated live from DBMS</div>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-blue">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="acad-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="stat-label">Average Performance</span>
+                <div class="stat-number mt-1">{{ summary.avg_marks }}%</div>
+                <div class="text-muted small mt-1"><i class="bi bi-graph-up-arrow text-success me-1"></i> Continuous Assessments</div>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-green">
+                <i class="bi bi-trophy-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Category Metrics Row 2 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="acad-card border-danger-subtle d-flex align-items-center justify-content-between">
+            <div>
+                <span class="stat-label text-danger fw-semibold">High Risk Students (Critical)</span>
+                <div class="stat-number text-danger mt-1">{{ summary.high_risk_count }}</div>
+                <div class="text-muted small mt-1">Requires immediate faculty intervention</div>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-red">
+                <i class="bi bi-exclamation-octagon-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="acad-card border-warning-subtle d-flex align-items-center justify-content-between">
+            <div>
+                <span class="stat-label text-warning fw-semibold">Medium Risk (Vulnerable)</span>
+                <div class="stat-number text-warning mt-1">{{ summary.medium_risk_count }}</div>
+                <div class="text-muted small mt-1">Borderline attendance or marks</div>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-amber">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="acad-card border-success-subtle d-flex align-items-center justify-content-between">
+            <div>
+                <span class="stat-label text-success fw-semibold">Low Risk (In Good Standing)</span>
+                <div class="stat-number text-success mt-1">{{ summary.low_risk_count }}</div>
+                <div class="text-muted small mt-1">Consistent performance &gt; 70%</div>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-green">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Charts Row 3 -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: ML Risk Distribution -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="acad-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Academic Risk Breakdown</h6>
+                <span class="badge bg-light text-secondary border">ML Output</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="riskDistributionChart"></canvas>
+            </div>
+            <div class="text-center text-muted small mt-2">
+                Derived from Scikit-Learn trained pipeline
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Department Performance -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="acad-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Departmental Performance Comparison</h6>
+                <span class="badge bg-light text-secondary border">SQL Aggregate AVG()</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="deptPerformanceChart"></canvas>
+            </div>
+            <div class="text-center text-muted small mt-2">
+                Average assessment score by academic department
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Charts Row 4 -->
+<div class="row g-4 mb-4">
+    <!-- Chart 3: Attendance Breakdown -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="acad-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-calendar2-range-fill text-primary me-2"></i>Attendance Session Distribution</h6>
+                <span class="badge bg-light text-secondary border">DBMS Records</span>
+            </div>
+            <div style="height: 230px; position: relative;">
+                <canvas id="attendanceDistChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Course-Wise Average Marks -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="acad-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Course Performance Benchmark</h6>
+                <span class="badge bg-light text-secondary border">Course Means</span>
+            </div>
+            <div style="height: 230px; position: relative;">
+                <canvas id="coursePerformanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Predictions & Alerts Row 5 -->
+<div class="row g-4">
+    <!-- Recent ML Predictions -->
+    <div class="col-xl-7">
+        <div class="acad-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-cpu-fill text-primary me-2"></i>Recent AI Predictions</h6>
+                <a href="{{ url_for('predictions.index') }}" class="btn btn-sm btn-link text-decoration-none">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Risk Tier</th>
+                            <th>Predicted</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in summary.recent_predictions %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark">{{ p.student_name }}</strong><br>
+                                <span class="text-muted small">{{ p.registration_number }}</span>
+                            </td>
+                            <td>{{ p.course_code }}</td>
+                            <td>
+                                {% if p.risk_category == 'High Risk' %}
+                                <span class="badge-risk-high"><i class="bi bi-exclamation-triangle-fill"></i> High Risk</span>
+                                {% elif p.risk_category == 'Medium Risk' %}
+                                <span class="badge-risk-med"><i class="bi bi-shield-exclamation"></i> Medium Risk</span>
+                                {% else %}
+                                <span class="badge-risk-low"><i class="bi bi-check-circle-fill"></i> Low Risk</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ p.predicted_marks }}%</strong></td>
+                            <td class="text-muted">{{ (p.risk_probability * 100)|round(1) }}%</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No recent predictions recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Early Warning Alerts -->
+    <div class="col-xl-5">
+        <div class="acad-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-bell-fill text-primary me-2"></i>Early Warning Alerts</h6>
+                <a href="{{ url_for('notifications.index') }}" class="btn btn-sm btn-link text-decoration-none">Manage</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for a in summary.recent_alerts %}
+                <div class="list-group-item px-0 py-2 border-bottom">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ a.notification_type }}</span>
+                        <small class="text-muted">{{ a.created_at[:16] }}</small>
+                    </div>
+                    <p class="mb-1 text-dark small mt-2">{{ a.message }}</p>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted small">No active warning alerts. All students are in satisfactory standing.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Risk Distribution Chart
+    const riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
+    new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ summary.charts.risk.labels|tojson }},
+            datasets: [{
+                data: {{ summary.charts.risk.data|tojson }},
+                backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } }
+            },
+            cutout: '68%'
+        }
+    });
+
+    // 2. Department Performance Chart
+    const deptCtx = document.getElementById('deptPerformanceChart').getContext('2d');
+    new Chart(deptCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ summary.charts.dept.labels|tojson }},
+            datasets: [{
+                label: 'Average Score (%)',
+                data: {{ summary.charts.dept.data|tojson }},
+                backgroundColor: '#2563EB',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { color: '#F3F4F6' } },
+                x: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 3. Attendance Distribution Chart
+    const attCtx = document.getElementById('attendanceDistChart').getContext('2d');
+    new Chart(attCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ summary.charts.attendance.labels|tojson }},
+            datasets: [{
+                data: {{ summary.charts.attendance.data|tojson }},
+                backgroundColor: ['#10B981', '#EF4444', '#F59E0B', '#6B7280'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } }
+            }
+        }
+    });
+
+    // 4. Course Performance Chart
+    const crsCtx = document.getElementById('coursePerformanceChart').getContext('2d');
+    new Chart(crsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ summary.charts.course.labels|tojson }},
+            datasets: [{
+                label: 'Course Average (%)',
+                data: {{ summary.charts.course.data|tojson }},
+                backgroundColor: '#1E40AF',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { beginAtZero: true, max: 100, grid: { color: '#F3F4F6' } },
+                y: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+});
+</script>
+{% endblock %}
+

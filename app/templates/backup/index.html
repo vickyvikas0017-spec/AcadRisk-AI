@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Backup and Restore{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Database Backup & Disaster Recovery</h2>
+        <p class="page-subtitle">Export full relational snapshots and execute verified restorations with strict confirmation safeguards</p>
+    </div>
+    {% if session.get('role_name') == 'ADMIN' %}
+    <form method="POST" action="{{ url_for('backup.create_backup') }}" class="d-inline">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-cloud-arrow-down-fill me-1"></i> Create Snapshot Backup
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Backups Table -->
+<div class="acad-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-archive-fill text-primary me-2"></i>Available Database Snapshots</h6>
+        <span class="badge bg-light text-secondary border">Storage: backups/</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Backup Archive</th>
+                    <th>File Size</th>
+                    <th>Creation Date</th>
+                    <th class="text-end">Recovery Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in backups %}
+                <tr>
+                    <td><strong class="text-dark font-monospace">{{ b.filename }}</strong></td>
+                    <td>{{ b.size_kb }} KB</td>
+                    <td class="text-muted small">{{ b.created_at }}</td>
+                    <td class="text-end">
+                        {% if session.get('role_name') == 'ADMIN' %}
+                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#restoreModal{{ loop.index }}">
+                            <i class="bi bi-arrow-repeat me-1"></i> Restore Snapshot
+                        </button>
+
+                        <!-- Safe Restore Confirmation Modal -->
+                        <div class="modal fade" id="restoreModal{{ loop.index }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('backup.restore_backup') }}">
+                                        <input type="hidden" name="filename" value="{{ b.filename }}">
+                                        <div class="modal-header border-danger">
+                                            <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Database Restoration</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <p class="text-dark">You are about to restore the database from snapshot: <strong class="font-monospace">{{ b.filename }}</strong>.</p>
+                                            <div class="alert alert-warning small border">
+                                                <i class="bi bi-shield-exclamation me-1"></i> <strong>Safety Warning:</strong> Restoration may overwrite recent changes made after this backup was taken.
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="confirmed" value="true" id="confirmCheck{{ loop.index }}" required>
+                                                <label class="form-check-label small fw-semibold text-danger" for="confirmCheck{{ loop.index }}">
+                                                    I confirm that I want to proceed with this database restoration.
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger"><i class="bi bi-arrow-repeat me-1"></i> Proceed With Restoration</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="badge bg-light text-muted">Admin Only</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center py-4 text-muted">No database backups generated yet. Click 'Create Snapshot Backup' above.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

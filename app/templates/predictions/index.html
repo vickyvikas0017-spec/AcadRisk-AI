@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}AI Predictions{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">AI Academic Risk Predictions</h2>
+        <p class="page-subtitle">Real-time machine learning inference pipeline trained on UCI Student Performance dataset</p>
+    </div>
+    {% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
+    <form method="POST" action="{{ url_for('predictions.batch_predict') }}" class="d-inline" onsubmit="return confirm('Execute batch ML risk predictions across all currently enrolled students?')">
+        <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-play-circle-fill me-1"></i> Run Batch Prediction Run
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Prediction Execution Form -->
+<div class="acad-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-cpu text-primary me-2"></i>Evaluate Single Student Risk Vector</h6>
+        <span class="badge bg-light text-secondary border">Active Model: Scikit-Learn Logistic Regression & Regressor</span>
+    </div>
+    <form method="POST" action="{{ url_for('predictions.single_predict') }}" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold">Select Student</label>
+            <select name="student_id" class="form-select" required>
+                {% for s in students %}
+                <option value="{{ s.student_id }}" {% if selected_student_id == s.student_id %}selected{% endif %}>
+                    {{ s.registration_number }} &bull; {{ s.student_name }} ({{ s.department_name }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold">Select Course</label>
+            <select name="course_id" class="form-select" required>
+                {% for c in courses %}
+                <option value="{{ c.course_id }}" {% if selected_course_id == c.course_id %}selected{% endif %}>
+                    {{ c.course_code }} - {{ c.course_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold">Semester</label>
+            <select name="semester_id" class="form-select" required>
+                {% for sem in semesters %}
+                <option value="{{ sem.semester_id }}">{{ sem.semester_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100 py-2">
+                <i class="bi bi-lightning-charge-fill me-1"></i> Predict Risk
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Live Prediction Result Banner (if just evaluated) -->
+{% if result %}
+<div class="acad-card mb-4 border-primary">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-clipboard2-pulse-fill text-primary me-2"></i>Evaluation Result: {{ result.student_name }}</h5>
+        <span class="badge bg-light text-primary border">ID #{{ result.prediction_id }}</span>
+    </div>
+    <div class="row g-4 align-items-center">
+        <div class="col-md-4 text-center border-end">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Predicted Risk Tier</div>
+            {% if result.risk_category == 'High Risk' %}
+            <span class="badge-risk-high fs-5 py-2 px-4 mb-2"><i class="bi bi-exclamation-triangle-fill"></i> High Risk</span>
+            <div class="text-danger small fw-semibold">Early Intervention Mandatory</div>
+            {% elif result.risk_category == 'Medium Risk' %}
+            <span class="badge-risk-med fs-5 py-2 px-4 mb-2"><i class="bi bi-shield-exclamation"></i> Medium Risk</span>
+            <div class="text-warning small fw-semibold">Academic Monitoring Advised</div>
+            {% else %}
+            <span class="badge-risk-low fs-5 py-2 px-4 mb-2"><i class="bi bi-check-circle-fill"></i> Low Risk</span>
+            <div class="text-success small fw-semibold">Satisfactory Standing</div>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-center border-end">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Estimated Final Score</div>
+            <div class="display-6 fw-bold text-primary">{{ result.predicted_marks }}%</div>
+            <div class="text-muted small">Model Confidence: <strong>{{ result.risk_probability }}%</strong></div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-muted small text-uppercase fw-bold mb-2">Key Contributing Academic Factors:</div>
+            <ul class="list-unstyled mb-0 small">
+                {% for factor in result.contributing_factors %}
+                <li class="mb-1 d-flex align-items-start gap-2">
+                    <i class="bi bi-dot text-primary fs-5"></i>
+                    <span>{{ factor }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Historical Predictions Table -->
+<div class="acad-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Prediction Log & Historical Inferences</h6>
+        <span class="badge bg-light text-secondary border">Total Predictions: {{ predictions|length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Risk Category</th>
+                    <th>Confidence</th>
+                    <th>Predicted Score</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in predictions %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ p.registration_number }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ p.student_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ p.course_code }}</span></td>
+                    <td>{{ p.course_name }}</td>
+                    <td>
+                        {% if p.risk_category == 'High Risk' %}
+                        <span class="badge-risk-high"><i class="bi bi-exclamation-triangle-fill"></i> High Risk</span>
+                        {% elif p.risk_category == 'Medium Risk' %}
+                        <span class="badge-risk-med"><i class="bi bi-shield-exclamation"></i> Medium Risk</span>
+                        {% else %}
+                        <span class="badge-risk-low"><i class="bi bi-check-circle-fill"></i> Low Risk</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ (p.risk_probability * 100)|round(1) }}%</td>
+                    <td><strong>{{ p.predicted_marks }}%</strong></td>
+                    <td class="small text-muted">{{ p.prediction_date }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-4 text-muted">No predictions stored yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

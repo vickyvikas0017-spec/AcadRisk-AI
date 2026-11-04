@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Data Import{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">CSV & Excel Batch Data Import</h2>
+        <p class="page-subtitle">Atomic transaction-based imports with strict duplicate detection and schema validation</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Upload Box -->
+    <div class="col-lg-7">
+        <div class="acad-card h-100">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-cloud-arrow-up-fill text-primary me-2"></i>Upload Dataset (CSV or Excel)</h6>
+            <form method="POST" action="{{ url_for('imports.upload') }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Target Import Type</label>
+                    <select name="import_type" id="importTypeSelect" class="form-select" required>
+                        <option value="students">Student Information Roster</option>
+                        <option value="attendance">Course Attendance Records</option>
+                        <option value="marks">Assessment Marks Evaluation</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Select File (.csv, .xlsx, .xls)</label>
+                    <input type="file" name="file" class="form-control" accept=".csv, .xlsx, .xls" required>
+                    <div class="form-text">Files are validated atomically; if any row fails validation, all changes are rolled back.</div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="atomic" value="true" id="atomicCheck" checked>
+                    <label class="form-check-label small fw-semibold text-dark" for="atomicCheck">
+                        Enable Atomic Transaction Mode (Roll back entire batch if any error occurs)
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-upload me-1"></i> Validate & Process Batch Import
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Download Sample Templates -->
+    <div class="col-lg-5">
+        <div class="acad-card h-100">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-file-earmark-arrow-down-fill text-primary me-2"></i>Standardized Sample Templates</h6>
+            <p class="small text-muted mb-3">Download pre-formatted templates matching database schema requirements:</p>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('imports.download_template', type='students') }}" class="btn btn-outline-primary text-start d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-people me-2"></i>Students Import Template</span>
+                    <i class="bi bi-download"></i>
+                </a>
+                <a href="{{ url_for('imports.download_template', type='attendance') }}" class="btn btn-outline-primary text-start d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calendar-check me-2"></i>Attendance Import Template</span>
+                    <i class="bi bi-download"></i>
+                </a>
+                <a href="{{ url_for('imports.download_template', type='marks') }}" class="btn btn-outline-primary text-start d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-award me-2"></i>Marks Import Template</span>
+                    <i class="bi bi-download"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Batch History Table -->
+<div class="acad-card">
+    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Batch Import Audit History</h6>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Batch ID</th>
+                    <th>File Name</th>
+                    <th>Type</th>
+                    <th>Total Rows</th>
+                    <th>Success</th>
+                    <th>Failed</th>
+                    <th>Status</th>
+                    <th>Import Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in batches %}
+                <tr>
+                    <td><code>#{{ b.batch_id }}</code></td>
+                    <td class="fw-semibold text-dark">{{ b.file_name }}</td>
+                    <td><span class="badge bg-light text-primary border">{{ b.import_type }}</span></td>
+                    <td>{{ b.total_records }}</td>
+                    <td class="text-success fw-bold">{{ b.successful_records }}</td>
+                    <td class="text-danger fw-bold">{{ b.failed_records }}</td>
+                    <td>
+                        {% if b.import_status == 'completed' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                        {% elif b.import_status == 'failed' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Rollback / Failed</span>
+                        {% else %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">{{ b.import_status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">{{ b.imported_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-4 text-muted">No import batches recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

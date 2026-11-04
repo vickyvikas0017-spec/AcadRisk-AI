@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Reports & Analytics{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Institutional Reports & Analytics</h2>
+        <p class="page-subtitle">Generate SQL aggregate reports and export to Microsoft Excel and PDF documents</p>
+    </div>
+</div>
+
+<!-- Available Reports Grid -->
+<div class="row g-4 mb-4">
+    <!-- Report 1: Department Performance -->
+    <div class="col-md-6">
+        <div class="acad-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Department Performance Summary</h6>
+                    <span class="badge bg-light text-primary border">SQL Joins + AVG()</span>
+                </div>
+                <p class="small text-muted mb-3">Aggregated course marks, enrollments, and academic standing across all teaching departments.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('reports.export', type='department', fmt='excel') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('reports.export', type='department', fmt='pdf') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF Document
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report 2: Chronic Absenteeism -->
+    <div class="col-md-6">
+        <div class="acad-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-danger mb-0"><i class="bi bi-calendar-x-fill text-danger me-2"></i>Chronic Absenteeism (&lt; 75%)</h6>
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Attendance Deficit</span>
+                </div>
+                <p class="small text-muted mb-3">Lists all students who have breached mandatory 75% attendance requirements.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('reports.export', type='attendance', fmt='excel') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('reports.export', type='attendance', fmt='pdf') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF Document
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report 3: Below Institutional Average -->
+    <div class="col-md-6">
+        <div class="acad-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-warning mb-0"><i class="bi bi-graph-down-arrow text-warning me-2"></i>Students Below Institutional Average</h6>
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Nested Subquery</span>
+                </div>
+                <p class="small text-muted mb-3">Identifies students whose marks fall below the campus-wide assessment average.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('reports.export', type='below_average', fmt='excel') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('reports.export', type='below_average', fmt='pdf') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF Document
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report 4: At-Risk Student Roster -->
+    <div class="col-md-6">
+        <div class="acad-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>At-Risk Student Roster</h6>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">AI Early Warning</span>
+                </div>
+                <p class="small text-muted mb-3">Comprehensive catalog of students with active High or Medium Risk predictions.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('reports.export', type='at_risk', fmt='excel') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('reports.export', type='at_risk', fmt='pdf') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF Document
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Preview of Department Report -->
+<div class="acad-card">
+    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-table text-primary me-2"></i>Live Data Preview: Department Performance</h6>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Department Name</th>
+                    <th>Students</th>
+                    <th>Enrollments</th>
+                    <th>Average Score (%)</th>
+                    <th>Min Score</th>
+                    <th>Max Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in preview_data %}
+                <tr>
+                    <td><strong class="text-primary">{{ row.department_code }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ row.department_name }}</td>
+                    <td>{{ row.total_students }}</td>
+                    <td>{{ row.course_enrollments }}</td>
+                    <td><strong class="text-success">{{ row.average_score }}%</strong></td>
+                    <td>{{ row.min_score }}%</td>
+                    <td>{{ row.max_score }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

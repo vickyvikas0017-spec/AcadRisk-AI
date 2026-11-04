@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Intervention Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Intervention Management</h2>
+        <p class="page-subtitle">Human-in-the-loop support actions, academic counselling, mentoring records, and student recovery tracking</p>
+    </div>
+    {% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newInterventionModal">
+        <i class="bi bi-heart-pulse-fill me-1"></i> Log New Intervention
+    </button>
+    {% endif %}
+</div>
+
+<div class="acad-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Faculty Assigned</th>
+                    <th>Intervention Type</th>
+                    <th>Action Plan</th>
+                    <th>Follow-up Date</th>
+                    <th>Status</th>
+                    <th>Outcome Notes</th>
+                    <th class="text-end">Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in interventions %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ i.registration_number }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ i.student_name }}</td>
+                    <td>{{ i.faculty_name }}</td>
+                    <td><span class="badge bg-light text-primary border">{{ i.intervention_type }}</span></td>
+                    <td class="small text-muted">{{ i.intervention_description }}</td>
+                    <td class="small">{{ i.follow_up_date or 'TBD' }}</td>
+                    <td>
+                        {% if i.intervention_status == 'Completed' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                        {% elif i.intervention_status == 'In Progress' %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">In Progress</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="small">{{ i.outcome or 'Pending evaluation' }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#updateModal{{ i.intervention_id }}">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- Update Intervention Modal -->
+                <div class="modal fade" id="updateModal{{ i.intervention_id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('interventions.update', intervention_id=i.intervention_id) }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Update Intervention #{{ i.intervention_id }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold">Status</label>
+                                        <select name="status" class="form-select">
+                                            <option value="Pending" {% if i.intervention_status == 'Pending' %}selected{% endif %}>Pending</option>
+                                            <option value="In Progress" {% if i.intervention_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                            <option value="Completed" {% if i.intervention_status == 'Completed' %}selected{% endif %}>Completed</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold">Outcome & Remarks</label>
+                                        <textarea name="outcome" class="form-control" rows="3" placeholder="Student attended remedial session; score improved on retest...">{{ i.outcome or '' }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save Outcome</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <tr><td colspan="9" class="text-center py-4 text-muted">No academic interventions logged.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Log New Intervention Modal -->
+<div class="modal fade" id="newInterventionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('interventions.create') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-heart-pulse text-primary me-2"></i>Schedule Student Intervention</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Target Student</label>
+                        <select name="student_id" class="form-select" required>
+                            {% for s in students %}
+                            <option value="{{ s.student_id }}" {% if selected_student_id == s.student_id %}selected{% endif %}>
+                                {{ s.registration_number }} - {{ s.student_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Assigned Faculty Mentor</label>
+                        <select name="faculty_id" class="form-select" required>
+                            {% for f in faculty %}
+                            <option value="{{ f.faculty_id }}">{{ f.faculty_name }} ({{ f.department_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Intervention Strategy</label>
+                        <select name="intervention_type" class="form-select" required>
+                            <option value="Academic Counselling">Academic Counselling</option>
+                            <option value="Extra Classes">Remedial / Extra Classes</option>
+                            <option value="Assignment Support">Assignment & Tutorial Support</option>
+                            <option value="Attendance Follow-up">Attendance Follow-up & Parent Contact</option>
+                            <option value="Mentoring">Peer Mentoring</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Action Plan Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Outline specific recovery steps..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Follow-up Review Date</label>
+                        <input type="date" name="follow_up_date" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Log Intervention</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

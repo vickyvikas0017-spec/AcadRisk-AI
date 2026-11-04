@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Institutional Audit Logs</h2>
+        <p class="page-subtitle">Granular immutable tracking of database operations, logins, marks updates, and trigger events</p>
+    </div>
+</div>
+
+<div class="acad-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle font-monospace small">
+            <thead>
+                <tr>
+                    <th>Log ID</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Table Affected</th>
+                    <th>Record ID</th>
+                    <th>Old State</th>
+                    <th>New State</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td><code>#{{ log.log_id }}</code></td>
+                    <td><strong>{{ log.username }}</strong></td>
+                    <td>
+                        {% if log.action_type == 'INSERT' %}
+                        <span class="badge bg-success-subtle text-success border">INSERT</span>
+                        {% elif log.action_type == 'UPDATE' %}
+                        <span class="badge bg-warning-subtle text-warning border">UPDATE</span>
+                        {% elif log.action_type == 'DELETE' %}
+                        <span class="badge bg-danger-subtle text-danger border">DELETE</span>
+                        {% else %}
+                        <span class="badge bg-primary-subtle text-primary border">{{ log.action_type }}</span>
+                        {% endif %}
+                    </td>
+                    <td><strong class="text-dark">{{ log.table_name }}</strong></td>
+                    <td>#{{ log.record_id or '-' }}</td>
+                    <td class="text-muted text-break" style="max-width: 200px;">{{ log.old_values or '-' }}</td>
+                    <td class="text-dark text-break" style="max-width: 200px;">{{ log.new_values or '-' }}</td>
+                    <td class="text-muted">{{ log.timestamp }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-4 text-muted font-sans-serif">No audit entries logged.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

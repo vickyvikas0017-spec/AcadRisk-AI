@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Marks Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Marks Management</h2>
+        <p class="page-subtitle">Award assessment marks with automated boundary constraints (0 &le; Marks &le; Max Marks) and grade translation</p>
+    </div>
+    {% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enterMarkModal">
+        <i class="bi bi-pencil-square me-1"></i> Enter / Update Marks
+    </button>
+    {% endif %}
+</div>
+
+<!-- Assessment Selection Filter -->
+<div class="acad-card mb-4">
+    <form method="GET" action="{{ url_for('marks.index') }}" class="row g-2 align-items-center">
+        <div class="col-md-9">
+            <select name="assessment_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Select an Assessment to View/Enter Marks --</option>
+                {% for a in assessments %}
+                <option value="{{ a.assessment_id }}" {% if selected_assessment and selected_assessment.assessment_id == a.assessment_id %}selected{% endif %}>
+                    {{ a.course_name }} &bull; {{ a.assessment_name }} (Max: {{ a.maximum_marks }}) &bull; Date: {{ a.assessment_date }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('marks.index') }}" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-counterclockwise"></i> Clear Selection</a>
+        </div>
+    </form>
+</div>
+
+<!-- Marks Table -->
+<div class="acad-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-dark mb-0">
+            <i class="bi bi-table text-primary me-2"></i>
+            {% if selected_assessment %}
+            Evaluation Roster: {{ selected_assessment.assessment_name }} (Max: {{ selected_assessment.maximum_marks }})
+            {% else %}
+            All Recorded Marks
+            {% endif %}
+        </h6>
+        <span class="badge bg-light text-secondary border">Total Entries: {{ marks|length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Assessment Name</th>
+                    <th>Max Marks</th>
+                    <th>Obtained Marks</th>
+                    <th>Percentage</th>
+                    <th>Letter Grade</th>
+                    <th>Recorded Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in marks %}
+                {% set pct = (m.obtained_marks / m.maximum_marks * 100)|round(1) if m.maximum_marks else 0 %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ m.registration_number }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ m.student_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ m.assessment_name }}</span></td>
+                    <td>{{ m.maximum_marks }}</td>
+                    <td><strong class="fs-6">{{ m.obtained_marks }}</strong></td>
+                    <td>
+                        <div class="progress" style="height: 6px; width: 100px;">
+                            <div class="progress-bar {% if pct < 40 %}bg-danger{% elif pct < 60 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ pct }}%;"></div>
+                        </div>
+                        <small class="fw-semibold">{{ pct }}%</small>
+                    </td>
+                    <td>
+                        {% if pct >= 90 %}
+                        <span class="badge bg-success-subtle text-success border">A+</span>
+                        {% elif pct >= 80 %}
+                        <span class="badge bg-success-subtle text-success border">A</span>
+                        {% elif pct >= 70 %}
+                        <span class="badge bg-primary-subtle text-primary border">B</span>
+                        {% elif pct >= 60 %}
+                        <span class="badge bg-info-subtle text-info border">C</span>
+                        {% elif pct >= 40 %}
+                        <span class="badge bg-warning-subtle text-warning border">D</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger border">F (Fail)</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">{{ m.recorded_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-4 text-muted">No marks records available.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Enter / Update Mark -->
+<div class="modal fade" id="enterMarkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('marks.record') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Record Student Marks</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Assessment</label>
+                        <select name="assessment_id" class="form-select" required>
+                            {% for a in assessments %}
+                            <option value="{{ a.assessment_id }}">{{ a.course_name }} &bull; {{ a.assessment_name }} (Max: {{ a.maximum_marks }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Student Enrollment</label>
+                        <select name="enrollment_id" class="form-select" required>
+                            {% for enr in enrollments %}
+                            <option value="{{ enr.enrollment_id }}">{{ enr.registration_number }} - {{ enr.student_name }} ({{ enr.course_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Obtained Marks (&ge; 0 and &le; Max Marks)</label>
+                        <input type="number" step="0.25" name="obtained_marks" class="form-control" placeholder="e.g. 21.5" min="0" required>
+                        <small class="text-muted">Database check constraints enforce boundary integrity.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Marks</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

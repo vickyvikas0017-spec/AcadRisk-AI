@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Academic History{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Academic History & Historical Performance</h2>
+        <p class="page-subtitle">Historical semester outcomes, cumulative credit records, grade points, and failure detection</p>
+    </div>
+</div>
+
+<div class="acad-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Semester</th>
+                    <th>Credits</th>
+                    <th>Final Grade</th>
+                    <th>Grade Point</th>
+                    <th>Result Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in histories %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ h.student_name }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ h.student_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ h.course_code }}</span></td>
+                    <td>{{ h.course_name }}</td>
+                    <td>Semester {{ h.semester_id }}</td>
+                    <td>{{ h.credits }}</td>
+                    <td><span class="badge bg-light text-primary border fw-bold">{{ h.final_grade }}</span></td>
+                    <td><strong>{{ h.grade_point }}</strong></td>
+                    <td>
+                        {% if h.result_status == 'Pass' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Pass</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Fail (Backlog)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="text-center py-4 text-muted">No academic history records found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Model Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Machine Learning Model Management</h2>
+        <p class="page-subtitle">Inspect registered predictive models, compare algorithmic benchmarks, and retrain pipeline on fresh datasets</p>
+    </div>
+    {% if session.get('role_name') == 'ADMIN' %}
+    <form method="POST" action="{{ url_for('models.retrain') }}" onsubmit="return confirm('Retrain and compare Logistic Regression, Random Forest, and Gradient Boosting on UCI Student Performance dataset?')">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-arrow-repeat me-1"></i> Retrain & Benchmark Models
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Active Model Spotlight Card -->
+{% if active_model %}
+<div class="acad-card mb-4 border-primary">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <span class="badge bg-primary text-white mb-1">Active Production Model</span>
+            <h5 class="fw-bold text-dark mb-0">{{ active_model.algorithm }} ({{ active_model.model_version }})</h5>
+            <small class="text-muted">Dataset Source: {{ active_model.dataset_source }}</small>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6">
+            <i class="bi bi-check-circle-fill me-1"></i> Status: Active
+        </span>
+    </div>
+    <div class="row g-3 text-center">
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded">
+                <span class="text-muted small fw-semibold">Accuracy</span>
+                <h4 class="fw-bold text-dark mt-1 mb-0">{{ (active_model.accuracy * 100)|round(2) }}%</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded">
+                <span class="text-muted small fw-semibold">Precision</span>
+                <h4 class="fw-bold text-dark mt-1 mb-0">{{ (active_model.precision * 100)|round(2) }}%</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded">
+                <span class="text-muted small fw-semibold">Recall (Safety Priority)</span>
+                <h4 class="fw-bold text-success mt-1 mb-0">{{ (active_model.recall * 100)|round(2) }}%</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded">
+                <span class="text-muted small fw-semibold">F1-Score</span>
+                <h4 class="fw-bold text-primary mt-1 mb-0">{{ (active_model.f1_score * 100)|round(2) }}%</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Model Registry Table -->
+<div class="acad-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-layers text-primary me-2"></i>Model Registry & Version History</h6>
+        <span class="badge bg-light text-secondary border">Total Models: {{ models|length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Model Name</th>
+                    <th>Algorithm</th>
+                    <th>Version</th>
+                    <th>Dataset</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1 Score</th>
+                    <th>Trained Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in models %}
+                <tr>
+                    <td><strong class="text-dark">{{ m.model_name }}</strong></td>
+                    <td><span class="badge bg-light text-primary border">{{ m.algorithm }}</span></td>
+                    <td><code>{{ m.model_version }}</code></td>
+                    <td class="small text-muted">{{ m.dataset_source }}</td>
+                    <td><strong>{{ (m.accuracy * 100)|round(1) }}%</strong></td>
+                    <td>{{ (m.precision * 100)|round(1) }}%</td>
+                    <td class="text-success fw-bold">{{ (m.recall * 100)|round(1) }}%</td>
+                    <td class="text-primary fw-bold">{{ (m.f1_score * 100)|round(1) }}%</td>
+                    <td class="small text-muted">{{ m.training_date }}</td>
+                    <td>
+                        {% if m.model_status == 'active' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                        {% else %}
+                        <span class="badge bg-light text-secondary border">Standby</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" class="text-center py-4 text-muted">No models in registry. Click 'Retrain & Benchmark Models' to train.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

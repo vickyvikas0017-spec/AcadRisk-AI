@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Database Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Advanced DBMS Management & Schema Explorer</h2>
+        <p class="page-subtitle">Inspect relational schema, views, triggers, stored procedures, and execute safe read-only SQL queries</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge {% if db_status.is_connected and not db_status.is_fallback %}bg-success{% else %}bg-primary{% endif %} text-white px-3 py-2 fs-6">
+            <i class="bi bi-database me-1"></i> Engine: {{ db_status.dialect|upper }}
+        </span>
+    </div>
+</div>
+
+{% if db_status.is_fallback %}
+<div class="alert alert-info border mb-4 d-flex align-items-center justify-content-between" role="alert">
+    <div>
+        <strong><i class="bi bi-info-circle-fill me-2"></i>Running in Resilient Local Engine Mode:</strong>
+        Full MySQL 8.0 schema and seed scripts are active. To connect to a live local MySQL daemon or Docker instance, execute <code>docker-compose up -d</code>.
+    </div>
+    <span class="badge bg-white text-dark border">MySQL 8 Ready</span>
+</div>
+{% endif %}
+
+<!-- Tabs Navigation for DBMS Explorer -->
+<ul class="nav nav-tabs mb-4" id="dbTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active fw-semibold" id="tables-tab" data-bs-toggle="tab" data-bs-target="#tablesPane">
+            <i class="bi bi-table me-1"></i> Tables & Row Counts ({{ db_status.table_stats|length }})
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-semibold" id="views-tab" data-bs-toggle="tab" data-bs-target="#viewsPane">
+            <i class="bi bi-eye-fill me-1"></i> Database Views (6)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-semibold" id="procedures-tab" data-bs-toggle="tab" data-bs-target="#proceduresPane">
+            <i class="bi bi-gear-wide-connected me-1"></i> Stored Procedures (4)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-semibold" id="triggers-tab" data-bs-toggle="tab" data-bs-target="#triggersPane">
+            <i class="bi bi-lightning-charge-fill me-1"></i> Triggers (5)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-semibold text-primary" id="sql-tab" data-bs-toggle="tab" data-bs-target="#sqlPane">
+            <i class="bi bi-terminal-fill me-1"></i> Safe SQL Query & EXPLAIN Runner
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- 1. Tables Pane -->
+    <div class="tab-pane fade show active" id="tablesPane">
+        <div class="acad-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Table Name</th>
+                            <th>Record Count</th>
+                            <th>Columns</th>
+                            <th>Foreign Keys</th>
+                            <th>Indexes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in db_status.table_stats %}
+                        <tr>
+                            <td><strong class="text-primary font-monospace">{{ t.name }}</strong></td>
+                            <td><span class="badge bg-light text-dark border fw-bold fs-6">{{ t.row_count }}</span></td>
+                            <td>{{ t.column_count }} cols ({{ t.columns[:4]|join(', ') }}...)</td>
+                            <td>{{ t.foreign_keys }} Foreign Keys</td>
+                            <td>{{ t.index_count }} Indexes</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Views Pane -->
+    <div class="tab-pane fade" id="viewsPane">
+        <div class="acad-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>View Name</th>
+                            <th>Business Purpose</th>
+                            <th class="text-end">Query View</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in views_info %}
+                        <tr>
+                            <td><strong class="text-dark font-monospace">{{ v.name }}</strong></td>
+                            <td class="text-muted">{{ v.purpose }}</td>
+                            <td class="text-end">
+                                <form method="POST" action="{{ url_for('database.run_sql') }}" class="d-inline">
+                                    <input type="hidden" name="sql" value="SELECT * FROM {{ v.name }} LIMIT 10">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Run Preview</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Stored Procedures Pane -->
+    <div class="tab-pane fade" id="proceduresPane">
+        <div class="acad-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Procedure Name</th>
+                            <th>Parameter Signature</th>
+                            <th>Encapsulated Logic</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in procedures_info %}
+                        <tr>
+                            <td><strong class="text-primary font-monospace">{{ p.name }}()</strong></td>
+                            <td><code>{{ p.parameters }}</code></td>
+                            <td class="small text-muted">{{ p.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Triggers Pane -->
+    <div class="tab-pane fade" id="triggersPane">
+        <div class="acad-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Trigger Name</th>
+                            <th>Database Event</th>
+                            <th>Automated Functionality</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trg in triggers_info %}
+                        <tr>
+                            <td><strong class="text-dark font-monospace">{{ trg.name }}</strong></td>
+                            <td><span class="badge bg-light text-primary border">{{ trg.event }}</span></td>
+                            <td class="small text-muted">{{ trg.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Safe SQL Query Runner & EXPLAIN Analyzer -->
+    <div class="tab-pane fade" id="sqlPane">
+        <div class="acad-card mb-4">
+            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-terminal text-primary me-2"></i>Interactive Read-Only SQL Query Interface</h6>
+            <p class="text-muted small mb-3">Execute SELECT queries against the database schema or analyze query plans using EXPLAIN.</p>
+
+            <form method="POST" action="{{ url_for('database.run_sql') }}">
+                <div class="mb-3">
+                    <textarea name="sql" class="form-control font-monospace" rows="4" placeholder="SELECT * FROM v_student_academic_summary LIMIT 10;">{{ submitted_sql or 'SELECT * FROM v_student_academic_summary LIMIT 10;' }}</textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" name="action" value="execute" class="btn btn-primary">
+                        <i class="bi bi-play-fill me-1"></i> Execute Query
+                    </button>
+                    <button type="submit" name="action" value="explain" class="btn btn-outline-primary">
+                        <i class="bi bi-diagram-2 me-1"></i> Analyze Execution Plan (EXPLAIN)
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Query Execution Results Output -->
+        {% if query_result %}
+        <div class="acad-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0">Query Result ({{ query_result.row_count }} Rows)</h6>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Success</span>
+            </div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm table-hover align-middle font-monospace small">
+                    <thead>
+                        <tr>
+                            {% for col in query_result.columns %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in query_result.rows %}
+                        <tr>
+                            {% for col in query_result.columns %}
+                            <td>{{ row[col] }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% elif explain_result %}
+        <div class="acad-card">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-2 text-primary me-2"></i>Query Optimization Plan (EXPLAIN Output)</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle font-monospace small">
+                    <thead>
+                        <tr>
+                            {% if explain_result[0] %}
+                                {% for k in explain_result[0].keys() %}
+                                <th>{{ k }}</th>
+                                {% endfor %}
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in explain_result %}
+                        <tr>
+                            {% for val in r.values() %}
+                            <td>{{ val }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

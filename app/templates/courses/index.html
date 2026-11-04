@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Course Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Course Management</h2>
+        <p class="page-subtitle">Configure courses, credit allocations, departmental mappings and curriculum descriptions</p>
+    </div>
+    {% if session.get('role_name') == 'ADMIN' %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+        <i class="bi bi-book-half me-1"></i> Add New Course
+    </button>
+    {% endif %}
+</div>
+
+<div class="acad-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Department</th>
+                    <th>Credits</th>
+                    <th>Curriculum Scope</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in courses %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ c.course_code }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ c.course_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ c.department_name }}</span></td>
+                    <td><span class="badge bg-primary-subtle text-primary border">{{ c.credits }} Credits</span></td>
+                    <td class="small text-muted">{{ c.description or 'N/A' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-4 text-muted">No courses registered.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addCourseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('courses.create') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Register New Course</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Course Code</label>
+                            <input type="text" name="course_code" class="form-control" placeholder="CS-305" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Credits (CHECK &gt; 0)</label>
+                            <input type="number" name="credits" class="form-control" value="4" min="1" max="10" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Course Title</label>
+                        <input type="text" name="course_name" class="form-control" placeholder="Operating Systems" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Department</label>
+                        <select name="department_id" class="form-select" required>
+                            {% for d in departments %}
+                            <option value="{{ d.department_id }}">{{ d.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Syllabus overview..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

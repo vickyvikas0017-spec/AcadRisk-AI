@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Attendance Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Attendance Management</h2>
+        <p class="page-subtitle">Track course sessions, record attendance statuses (Present, Absent, Late, Excused) and compute ratios</p>
+    </div>
+    {% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newSessionModal">
+        <i class="bi bi-calendar-check me-1"></i> Record Session Attendance
+    </button>
+    {% endif %}
+</div>
+
+<!-- Attendance Course Summary Table -->
+<div class="acad-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Student Attendance Standing by Course</h6>
+        <span class="badge bg-light text-secondary border">Ratio Formula: (Present / Total) &times; 100</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Total Sessions</th>
+                    <th>Present</th>
+                    <th>Absent</th>
+                    <th>Late</th>
+                    <th>Attendance %</th>
+                    <th>Risk Warning</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for att in student_attendance %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ att.registration_number }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ att.student_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ att.course_code }}</span></td>
+                    <td>{{ att.course_name }}</td>
+                    <td>{{ att.total_sessions }}</td>
+                    <td class="text-success fw-semibold">{{ att.present_count }}</td>
+                    <td class="text-danger fw-semibold">{{ att.absent_count }}</td>
+                    <td class="text-warning fw-semibold">{{ att.late_count }}</td>
+                    <td>
+                        <strong class="{% if (att.attendance_percentage or 0.0) < 75.0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ att.attendance_percentage or 0.0 }}%
+                        </strong>
+                    </td>
+                    <td>
+                        {% if (att.attendance_percentage or 0.0) < 75.0 %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                            <i class="bi bi-exclamation-triangle"></i> Deficit (&lt; 75%)
+                        </span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check2"></i> Normal
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" class="text-center py-4 text-muted">No attendance data available.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Attendance Sessions Table -->
+<div class="acad-card">
+    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Recent Attendance Sessions Held</h6>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Course</th>
+                    <th>Faculty</th>
+                    <th>Session Date</th>
+                    <th>Session Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr>
+                    <td><code>#{{ s.session_id }}</code></td>
+                    <td class="fw-semibold text-dark">{{ s.course_name }}</td>
+                    <td>{{ s.faculty_name }}</td>
+                    <td>{{ s.session_date }}</td>
+                    <td><span class="badge bg-light text-primary border">{{ s.session_type }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-4 text-muted">No sessions logged yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Record Attendance Modal -->
+<div class="modal fade" id="newSessionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('attendance.create_session') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check text-primary me-2"></i>Record Course Attendance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Course</label>
+                            <select name="course_id" id="courseSelect" class="form-select" required>
+                                {% for c in courses %}
+                                <option value="{{ c.course_id }}">{{ c.course_code }} - {{ c.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Semester</label>
+                            <select name="semester_id" class="form-select" required>
+                                {% for sem in semesters %}
+                                <option value="{{ sem.semester_id }}">{{ sem.semester_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Session Date</label>
+                            <input type="date" name="session_date" class="form-control" value="{{ today }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Session Type</label>
+                            <select name="session_type" class="form-select">
+                                <option value="Lecture">Lecture</option>
+                                <option value="Lab Session">Lab Session</option>
+                                <option value="Tutorial">Tutorial</option>
+                                <option value="Seminar">Seminar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-dark mt-4 mb-2">Student Attendance Roster</h6>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Status (Present / Absent / Late / Excused)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for enr in enrollments %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ enr.student_name }}</strong> ({{ enr.registration_number }})
+                                        <input type="hidden" name="enrollment_id" value="{{ enr.enrollment_id }}">
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="status_{{ enr.enrollment_id }}" value="Present" checked>
+                                                <label class="form-check-label text-success small fw-semibold">Present</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="status_{{ enr.enrollment_id }}" value="Absent">
+                                                <label class="form-check-label text-danger small fw-semibold">Absent</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="status_{{ enr.enrollment_id }}" value="Late">
+                                                <label class="form-check-label text-warning small fw-semibold">Late</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="status_{{ enr.enrollment_id }}" value="Excused">
+                                                <label class="form-check-label text-secondary small fw-semibold">Excused</label>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-all me-1"></i> Submit Session Attendance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

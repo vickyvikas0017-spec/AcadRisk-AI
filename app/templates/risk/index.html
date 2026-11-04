@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Risk Monitoring{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Risk Monitoring & Early Warning Center</h2>
+        <p class="page-subtitle">Continuous surveillance of vulnerable students categorized by genuine machine learning inference</p>
+    </div>
+    <a href="{{ url_for('interventions.index') }}" class="btn btn-primary">
+        <i class="bi bi-heart-pulse me-1"></i> Manage Interventions
+    </a>
+</div>
+
+<!-- High Risk Priority Roster -->
+<div class="acad-card mb-4 border-danger-subtle">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h6 class="fw-bold text-danger mb-0"><i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>High Risk Priority Action Roster</h6>
+            <small class="text-muted">Students with predicted failure probability &gt; 50% or assessment score &lt; 40%</small>
+        </div>
+        <span class="badge bg-danger text-white">{{ high_risk_students|length }} Critical Cases</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Risk Category</th>
+                    <th>Risk Probability</th>
+                    <th>Predicted Score</th>
+                    <th>Prediction Date</th>
+                    <th class="text-end">Intervention</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in high_risk_students %}
+                <tr>
+                    <td><strong class="text-danger font-monospace">{{ s.registration_number }}</strong></td>
+                    <td class="fw-bold text-dark">{{ s.student_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ s.course_code }}</span></td>
+                    <td>{{ s.course_name }}</td>
+                    <td><span class="badge-risk-high"><i class="bi bi-exclamation-triangle-fill"></i> High Risk</span></td>
+                    <td><strong class="text-danger">{{ (s.risk_probability * 100)|round(1) }}%</strong></td>
+                    <td><span class="text-danger fw-semibold">{{ s.predicted_marks }}%</span></td>
+                    <td class="small text-muted">{{ (s.prediction_date|string)[:10] }}</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('interventions.index', student_id=s.student_id, prediction_id=s.prediction_id) }}" class="btn btn-sm btn-danger text-white">
+                            <i class="bi bi-heart-pulse-fill me-1"></i> Intervene
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="text-center py-4 text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> No high-risk students identified currently.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Medium Risk Monitoring Roster -->
+<div class="acad-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h6 class="fw-bold text-warning mb-0"><i class="bi bi-shield-exclamation text-warning me-2"></i>Medium Risk Surveillance List</h6>
+            <small class="text-muted">Students performing near pass/fail boundary requiring mentoring</small>
+        </div>
+        <span class="badge bg-warning text-dark">{{ medium_risk_students|length }} Monitored</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Registration No.</th>
+                    <th>Student Name</th>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Risk Category</th>
+                    <th>Risk Probability</th>
+                    <th>Predicted Score</th>
+                    <th>Prediction Date</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in medium_risk_students %}
+                <tr>
+                    <td><strong class="text-primary font-monospace">{{ s.registration_number }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ s.student_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ s.course_code }}</span></td>
+                    <td>{{ s.course_name }}</td>
+                    <td><span class="badge-risk-med"><i class="bi bi-shield-exclamation"></i> Medium Risk</span></td>
+                    <td>{{ (s.risk_probability * 100)|round(1) }}%</td>
+                    <td><strong>{{ s.predicted_marks }}%</strong></td>
+                    <td class="small text-muted">{{ (s.prediction_date|string)[:10] }}</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('interventions.index', student_id=s.student_id) }}" class="btn btn-sm btn-outline-warning text-dark">
+                            <i class="bi bi-journal-plus me-1"></i> Support
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="text-center py-4 text-muted">No medium-risk students found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
