@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session
-from app.utils.auth_helpers import login_required
+from app.utils.auth_helpers import login_required, role_required
 from app.services.prediction_service import PredictionService
 from app.services.notification_service import NotificationService
 from app.database.connection import db_manager
@@ -8,6 +8,7 @@ risk_bp = Blueprint('risk', __name__)
 
 @risk_bp.route('/risk-monitoring')
 @login_required
+@role_required(['ADMIN', 'FACULTY'])
 def index():
     high_risk_students = PredictionService.get_predictions(risk_category='High Risk')
     medium_risk_students = PredictionService.get_predictions(risk_category='Medium Risk')

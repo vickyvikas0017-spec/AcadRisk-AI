@@ -9,6 +9,7 @@ enrollments_bp = Blueprint('enrollments', __name__)
 
 @enrollments_bp.route('/enrollments')
 @login_required
+@role_required(['ADMIN'])
 def index():
     enrollments = AcademicService.get_enrollments()
     students, _ = StudentService.get_students(limit=100)

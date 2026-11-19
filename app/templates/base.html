@@ -27,12 +27,131 @@
             </div>
 
             <nav class="sidebar-nav">
-                <!-- 1. Dashboard -->
+                <!-- 1. Dashboard (Customized per role) -->
                 <a href="{{ url_for('dashboard.index') }}" class="nav-item-link {% if active_page == 'dashboard' %}active{% endif %}">
                     <i class="bi bi-grid-1x2-fill"></i>
-                    <span>1. Dashboard</span>
+                    <span>1. {% if session.get('role_name') == 'STUDENT' %}My Dashboard{% elif session.get('role_name') == 'FACULTY' %}Faculty Dashboard{% else %}Dashboard{% endif %}</span>
                 </a>
 
+                {% if session.get('role_name') == 'STUDENT' %}
+                <!-- ==================== STUDENT PORTAL NAVIGATION ==================== -->
+                <div class="nav-section-title">My Academic Hub</div>
+                <!-- 8. My Attendance -->
+                <a href="{{ url_for('attendance.index') }}" class="nav-item-link {% if active_page == 'attendance' %}active{% endif %}">
+                    <i class="bi bi-check2-square"></i>
+                    <span>8. My Attendance</span>
+                </a>
+                <!-- 10. My Marks -->
+                <a href="{{ url_for('marks.index') }}" class="nav-item-link {% if active_page == 'marks' %}active{% endif %}">
+                    <i class="bi bi-award-fill"></i>
+                    <span>10. My Marks & Performance</span>
+                </a>
+                <!-- 11. Academic History -->
+                <a href="{{ url_for('history.index') }}" class="nav-item-link {% if active_page == 'history' %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i>
+                    <span>11. My Academic Progress</span>
+                </a>
+
+                <div class="nav-section-title">AI & Support</div>
+                <!-- 12. AI Predictions -->
+                <a href="{{ url_for('predictions.index') }}" class="nav-item-link {% if active_page == 'predictions' %}active{% endif %}">
+                    <i class="bi bi-cpu-fill"></i>
+                    <span>12. AI Risk Advisory</span>
+                </a>
+                <!-- 14. Mentoring & Interventions -->
+                <a href="{{ url_for('interventions.index') }}" class="nav-item-link {% if active_page == 'interventions' %}active{% endif %}">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                    <span>14. Mentoring & Guidance</span>
+                </a>
+                <!-- 15. Notifications -->
+                <a href="{{ url_for('notifications.index') }}" class="nav-item-link {% if active_page == 'notifications' %}active{% endif %}">
+                    <i class="bi bi-bell-fill"></i>
+                    <span>15. Notifications</span>
+                    {% if unread_count and unread_count > 0 %}
+                    <span class="badge bg-danger rounded-pill ms-auto">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+
+                <div class="nav-section-title">Account</div>
+                <!-- 23. Settings -->
+                <a href="{{ url_for('settings.index') }}" class="nav-item-link {% if active_page == 'settings' %}active{% endif %}">
+                    <i class="bi bi-person-circle"></i>
+                    <span>23. Profile & Settings</span>
+                </a>
+
+                {% elif session.get('role_name') == 'FACULTY' %}
+                <!-- ==================== FACULTY PORTAL NAVIGATION ==================== -->
+                <div class="nav-section-title">Teaching & Classes</div>
+                <!-- 2. Student Management (Directory) -->
+                <a href="{{ url_for('students.index') }}" class="nav-item-link {% if active_page == 'students' %}active{% endif %}">
+                    <i class="bi bi-people-fill"></i>
+                    <span>2. Student Directory</span>
+                </a>
+                <!-- 5. Course Management -->
+                <a href="{{ url_for('courses.index') }}" class="nav-item-link {% if active_page == 'courses' %}active{% endif %}">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                    <span>5. Course Catalog</span>
+                </a>
+                <!-- 8. Attendance Management -->
+                <a href="{{ url_for('attendance.index') }}" class="nav-item-link {% if active_page == 'attendance' %}active{% endif %}">
+                    <i class="bi bi-check2-square"></i>
+                    <span>8. Attendance Management</span>
+                </a>
+                <!-- 9. Examination Management -->
+                <a href="{{ url_for('examinations.index') }}" class="nav-item-link {% if active_page == 'examinations' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                    <span>9. Examination Management</span>
+                </a>
+                <!-- 10. Marks Management -->
+                <a href="{{ url_for('marks.index') }}" class="nav-item-link {% if active_page == 'marks' %}active{% endif %}">
+                    <i class="bi bi-award-fill"></i>
+                    <span>10. Marks Management</span>
+                </a>
+                <!-- 11. Academic History -->
+                <a href="{{ url_for('history.index') }}" class="nav-item-link {% if active_page == 'history' %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i>
+                    <span>11. Academic History</span>
+                </a>
+
+                <div class="nav-section-title">AI & Early Warning</div>
+                <!-- 12. AI Predictions -->
+                <a href="{{ url_for('predictions.index') }}" class="nav-item-link {% if active_page == 'predictions' %}active{% endif %}">
+                    <i class="bi bi-cpu-fill"></i>
+                    <span>12. AI Predictions</span>
+                </a>
+                <!-- 13. Risk Monitoring -->
+                <a href="{{ url_for('risk.index') }}" class="nav-item-link {% if active_page == 'risk' %}active{% endif %}">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>13. High-Risk Students</span>
+                </a>
+                <!-- 14. Intervention Management -->
+                <a href="{{ url_for('interventions.index') }}" class="nav-item-link {% if active_page == 'interventions' %}active{% endif %}">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                    <span>14. Intervention Management</span>
+                </a>
+                <!-- 15. Notifications -->
+                <a href="{{ url_for('notifications.index') }}" class="nav-item-link {% if active_page == 'notifications' %}active{% endif %}">
+                    <i class="bi bi-bell-fill"></i>
+                    <span>15. Notifications</span>
+                    {% if unread_count and unread_count > 0 %}
+                    <span class="badge bg-danger rounded-pill ms-auto">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+
+                <div class="nav-section-title">Reports & Profile</div>
+                <!-- 18. Reports and Analytics -->
+                <a href="{{ url_for('reports.index') }}" class="nav-item-link {% if active_page == 'reports' %}active{% endif %}">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>18. Reports and Analytics</span>
+                </a>
+                <!-- 23. Settings -->
+                <a href="{{ url_for('settings.index') }}" class="nav-item-link {% if active_page == 'settings' %}active{% endif %}">
+                    <i class="bi bi-sliders"></i>
+                    <span>23. Settings</span>
+                </a>
+
+                {% else %}
+                <!-- ==================== ADMIN FULL APPLICATION NAVIGATION ==================== -->
                 <div class="nav-section-title">Core Academic Management</div>
                 <!-- 2. Student Management -->
                 <a href="{{ url_for('students.index') }}" class="nav-item-link {% if active_page == 'students' %}active{% endif %}">
@@ -153,6 +272,7 @@
                     <i class="bi bi-sliders"></i>
                     <span>23. Settings</span>
                 </a>
+                {% endif %}
             </nav>
         </aside>
 

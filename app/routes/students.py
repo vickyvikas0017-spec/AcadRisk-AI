@@ -9,6 +9,7 @@ students_bp = Blueprint('students', __name__)
 
 @students_bp.route('/students')
 @login_required
+@role_required(['ADMIN', 'FACULTY'])
 def index():
     search_query = request.args.get('q', '').strip()
     dept_id = request.args.get('dept', type=int)

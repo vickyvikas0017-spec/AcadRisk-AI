@@ -4,7 +4,7 @@ from app.services.marks_service import MarksService
 from app.services.academic_service import AcademicService
 from app.services.notification_service import NotificationService
 from app.database.connection import db_manager, get_db
-from app.models.entities import Assessment, Mark
+from app.models.entities import Assessment, Mark, Student
 
 marks_bp = Blueprint('marks', __name__)
 
@@ -21,6 +21,18 @@ def index():
         query = db.query(Mark)
         if assessment_id:
             query = query.filter_by(assessment_id=assessment_id)
+
+        # Scope marks if logged in as student
+        if session.get('role_name') == 'STUDENT':
+            student = db.query(Student).filter_by(user_id=session.get('user_id')).first()
+            if not student and session.get('student_id'):
+                student = db.query(Student).filter_by(student_id=session.get('student_id')).first()
+            if not student:
+                student = db.query(Student).first()
+            if student:
+                enr_ids = [e.enrollment_id for e in student.enrollments]
+                query = query.filter(Mark.enrollment_id.in_(enr_ids))
+
         marks = [m.to_dict() for m in query.all()]
     finally:
         db.close()

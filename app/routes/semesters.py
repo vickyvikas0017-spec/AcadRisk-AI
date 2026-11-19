@@ -8,6 +8,7 @@ semesters_bp = Blueprint('semesters', __name__)
 
 @semesters_bp.route('/semesters')
 @login_required
+@role_required(['ADMIN'])
 def index():
     semesters = AcademicService.get_all_semesters()
     calendar_events = AcademicService.get_calendar_events()

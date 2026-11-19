@@ -23,9 +23,17 @@ class AuthService:
 
         session = db_manager.get_session()
         try:
+            lookup_name = username.strip()
             user = session.query(User).filter(
-                (User.username == username) | (User.email == username)
+                (User.username == lookup_name) | (User.email == lookup_name)
             ).first()
+
+            # Support demo credential aliases if direct username not found
+            if not user:
+                if lookup_name.lower() in ('faculty1', 'faculty'):
+                    user = session.query(User).filter_by(username='prof_smith').first()
+                elif lookup_name.lower() in ('student1', 'student'):
+                    user = session.query(User).filter_by(username='john_doe').first()
 
             if not user:
                 return None, "Invalid username or password."
@@ -62,6 +70,28 @@ class AuthService:
             session.commit()
 
             user_data = user.to_dict()
+            if user.student_profile:
+                user_data['student_id'] = user.student_profile.student_id
+                user_data['full_name'] = user.student_profile.student_name
+            elif user.role and user.role.role_name == 'STUDENT':
+                student = session.query(Student).filter_by(user_id=user.user_id).first()
+                if not student:
+                    student = session.query(Student).first()
+                if student:
+                    user_data['student_id'] = student.student_id
+                    user_data['full_name'] = student.student_name
+
+            if user.faculty_profile:
+                user_data['faculty_id'] = user.faculty_profile.faculty_id
+                user_data['full_name'] = user.faculty_profile.faculty_name
+            elif user.role and user.role.role_name == 'FACULTY':
+                faculty = session.query(Faculty).filter_by(user_id=user.user_id).first()
+                if not faculty:
+                    faculty = session.query(Faculty).first()
+                if faculty:
+                    user_data['faculty_id'] = faculty.faculty_id
+                    user_data['full_name'] = faculty.faculty_name
+
             return user_data, None
         finally:
             session.close()

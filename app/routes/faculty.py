@@ -10,6 +10,7 @@ faculty_bp = Blueprint('faculty', __name__)
 
 @faculty_bp.route('/faculty')
 @login_required
+@role_required(['ADMIN'])
 def index():
     faculty_list = FacultyService.get_all_faculty()
     departments = AcademicService.get_all_departments()

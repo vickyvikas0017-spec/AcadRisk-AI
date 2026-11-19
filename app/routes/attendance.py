@@ -6,12 +6,16 @@ from app.services.attendance_service import AttendanceService
 from app.services.academic_service import AcademicService
 from app.services.notification_service import NotificationService
 from app.database.connection import db_manager
+from app.models.entities import Student
 
 attendance_bp = Blueprint('attendance', __name__)
 
 @attendance_bp.route('/attendance')
 @login_required
 def index():
+    user_id = session.get('user_id')
+    role_name = session.get('role_name')
+
     sessions = AttendanceService.get_sessions()
     courses = AcademicService.get_all_courses()
     semesters = AcademicService.get_all_semesters()
@@ -20,7 +24,20 @@ def index():
     # Query student attendance summary view or fallback
     session_db = db_manager.get_session()
     try:
-        res = session_db.execute(text("""
+        where_conditions = []
+        params = {}
+        if role_name == 'STUDENT':
+            student = session_db.query(Student).filter_by(user_id=user_id).first()
+            if not student and session.get('student_id'):
+                student = session_db.query(Student).filter_by(student_id=session.get('student_id')).first()
+            if not student:
+                student = session_db.query(Student).first()
+            if student:
+                where_conditions.append("s.student_id = :sid")
+                params['sid'] = student.student_id
+
+        where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
+        sql = f"""
             SELECT 
                 s.registration_number,
                 s.student_name,
@@ -35,8 +52,10 @@ def index():
             JOIN enrollments e ON s.student_id = e.student_id
             JOIN courses c ON e.course_id = c.course_id
             LEFT JOIN attendance_records ar ON e.enrollment_id = ar.enrollment_id
+            {where_clause}
             GROUP BY s.registration_number, s.student_name, c.course_code, c.course_name
-        """))
+        """
+        res = session_db.execute(text(sql), params)
         student_attendance = [dict(row._mapping) for row in res]
     finally:
         session_db.close()

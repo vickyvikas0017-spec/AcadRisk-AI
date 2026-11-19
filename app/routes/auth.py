@@ -18,6 +18,9 @@ def login():
         session['username'] = user['username']
         session['role_name'] = user['role_name']
         session['role_id'] = user['role_id']
+        session['student_id'] = user.get('student_id')
+        session['faculty_id'] = user.get('faculty_id')
+        session['full_name'] = user.get('full_name') or user['username']
 
         flash(f"Welcome back, {user['username']}! Logged in as {user['role_name']}.", 'success')
         next_url = request.args.get('next')

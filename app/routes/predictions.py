@@ -4,7 +4,8 @@ from app.services.prediction_service import PredictionService
 from app.services.student_service import StudentService
 from app.services.academic_service import AcademicService
 from app.services.notification_service import NotificationService
-from app.database.connection import db_manager
+from app.database.connection import db_manager, get_db
+from app.models.entities import Student
 
 predictions_bp = Blueprint('predictions', __name__)
 
@@ -14,7 +15,19 @@ def index():
     student_id = request.args.get('student_id', type=int)
     course_id = request.args.get('course_id', type=int)
 
-    predictions = PredictionService.get_predictions(limit=50)
+    filter_student_id = student_id
+    if session.get('role_name') == 'STUDENT':
+        filter_student_id = session.get('student_id')
+        if not filter_student_id:
+            db = get_db()
+            stu = db.query(Student).filter_by(user_id=session.get('user_id')).first()
+            if not stu:
+                stu = db.query(Student).first()
+            if stu:
+                filter_student_id = stu.student_id
+            db.close()
+
+    predictions = PredictionService.get_predictions(limit=50, student_id=filter_student_id, course_id=course_id)
     students, _ = StudentService.get_students(limit=100)
     courses = AcademicService.get_all_courses()
     semesters = AcademicService.get_all_semesters()

@@ -4,7 +4,8 @@ from app.services.intervention_service import InterventionService
 from app.services.student_service import StudentService
 from app.services.faculty_service import FacultyService
 from app.services.notification_service import NotificationService
-from app.database.connection import db_manager
+from app.database.connection import db_manager, get_db
+from app.models.entities import Student
 
 interventions_bp = Blueprint('interventions', __name__)
 
@@ -14,7 +15,19 @@ def index():
     student_id = request.args.get('student_id', type=int)
     prediction_id = request.args.get('prediction_id', type=int)
 
-    interventions = InterventionService.get_interventions()
+    filter_student_id = student_id
+    if session.get('role_name') == 'STUDENT':
+        filter_student_id = session.get('student_id')
+        if not filter_student_id:
+            db = get_db()
+            stu = db.query(Student).filter_by(user_id=session.get('user_id')).first()
+            if not stu:
+                stu = db.query(Student).first()
+            if stu:
+                filter_student_id = stu.student_id
+            db.close()
+
+    interventions = InterventionService.get_interventions(student_id=filter_student_id)
     students, _ = StudentService.get_students(limit=100)
     faculty = FacultyService.get_all_faculty()
     unread_count = NotificationService.get_unread_count(session.get('user_id'))

@@ -8,6 +8,7 @@ courses_bp = Blueprint('courses', __name__)
 
 @courses_bp.route('/courses')
 @login_required
+@role_required(['ADMIN', 'FACULTY'])
 def index():
     courses = AcademicService.get_all_courses()
     departments = AcademicService.get_all_departments()

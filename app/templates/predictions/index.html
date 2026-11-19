@@ -15,11 +15,12 @@
     {% endif %}
 </div>
 
+{% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
 <!-- Prediction Execution Form -->
 <div class="acad-card mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="fw-bold text-dark mb-0"><i class="bi bi-cpu text-primary me-2"></i>Evaluate Single Student Risk Vector</h6>
-        <span class="badge bg-light text-secondary border">Active Model: Scikit-Learn Logistic Regression & Regressor</span>
+        <span class="badge bg-light text-secondary border">Active Model: Scikit-Learn Logistic Regression &amp; Regressor</span>
     </div>
     <form method="POST" action="{{ url_for('predictions.single_predict') }}" class="row g-3">
         <div class="col-md-4">
@@ -57,6 +58,17 @@
         </div>
     </form>
 </div>
+{% else %}
+<div class="acad-card mb-4 bg-light border-primary-subtle">
+    <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-robot fs-1 text-primary"></i>
+        <div>
+            <h5 class="fw-bold mb-1 text-dark">Personalized Machine Learning Risk Advisory</h5>
+            <p class="mb-0 text-muted">Below are the real-time early warning predictions and expected performance outcomes for your enrolled courses, calculated from attendance records and formative assessment results.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Live Prediction Result Banner (if just evaluated) -->
 {% if result %}

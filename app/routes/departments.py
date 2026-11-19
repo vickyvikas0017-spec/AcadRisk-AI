@@ -8,6 +8,7 @@ departments_bp = Blueprint('departments', __name__)
 
 @departments_bp.route('/departments')
 @login_required
+@role_required(['ADMIN'])
 def index():
     departments = AcademicService.get_all_departments()
     unread_count = NotificationService.get_unread_count(session.get('user_id'))

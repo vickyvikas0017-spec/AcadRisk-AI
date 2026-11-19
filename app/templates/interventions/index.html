@@ -26,7 +26,9 @@
                     <th>Follow-up Date</th>
                     <th>Status</th>
                     <th>Outcome Notes</th>
+                    {% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
                     <th class="text-end">Update</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -48,11 +50,13 @@
                         {% endif %}
                     </td>
                     <td class="small">{{ i.outcome or 'Pending evaluation' }}</td>
+                    {% if session.get('role_name') in ('ADMIN', 'FACULTY') %}
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#updateModal{{ i.intervention_id }}">
                             <i class="bi bi-pencil-square"></i>
                         </button>
                     </td>
+                    {% endif %}
                 </tr>
 
                 <!-- Update Intervention Modal -->
